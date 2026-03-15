@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Idle Tower Defense - Pro Edition</title>
+    <title>Idle Tower Defense - Stable Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap');
@@ -11,36 +11,55 @@
         canvas { display: block; touch-action: none; }
         .glass-panel { background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
         .shop-btn { transition: all 0.2s ease; position: relative; }
-        .shop-btn:disabled { opacity: 0.4; filter: grayscale(1); cursor: not-allowed; }
+        .shop-btn:disabled { opacity: 0.3; filter: grayscale(1); cursor: not-allowed; }
         .shop-btn:active:not(:disabled) { transform: scale(0.95); }
         .speed-btn-active { background-color: #3b82f6 !important; color: white !important; box-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
-        .tooltip { visibility: hidden; position: absolute; bottom: 115%; left: 50%; transform: translateX(-50%); width: 180px; background-color: rgba(15, 23, 42, 0.98); color: #fff; text-align: center; padding: 10px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.2); z-index: 100; font-size: 11px; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+        
+        .tooltip {
+            visibility: hidden; position: absolute; bottom: 125%; left: 50%; transform: translateX(-50%);
+            width: 190px; background-color: rgba(15, 23, 42, 0.98); color: #fff; text-align: center;
+            padding: 10px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.2);
+            z-index: 100; font-size: 11px; opacity: 0; transition: opacity 0.3s; pointer-events: none;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+        }
         .shop-btn:hover .tooltip { visibility: visible; opacity: 1; }
+        .ai-pulse { animation: pulse-purple 2s infinite; }
+        @keyframes pulse-purple { 0% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(168, 85, 247, 0); } 100% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0); } }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
         .inventory-item { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); }
     </style>
 </head>
 <body>
-    <div id="main-menu" class="absolute inset-0 z-50 flex flex-col items-center justify-center p-4 bg-slate-950/90 text-white">
-        <h1 class="text-6xl font-extrabold mb-8 italic text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">IDLE TOWER</h1>
+
+    <!-- Main Menu -->
+    <div id="main-menu" class="absolute inset-0 z-50 flex flex-col items-center justify-center p-4 bg-slate-950/95 text-white text-center">
+        <h1 class="text-6xl font-extrabold mb-4 italic text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400 drop-shadow-2xl uppercase">Idle Tower</h1>
+        
+        <div class="mb-4 text-center">
+            <p class="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Player Identity</p>
+            <p id="user-id-display" class="text-xs text-blue-400 font-mono">Connecting...</p>
+        </div>
+
         <div class="glass-panel p-6 rounded-3xl w-full max-w-md shadow-2xl border-t border-white/10">
             <div class="flex justify-between items-center mb-6">
-                <span class="text-xl font-bold">เหรียญถาวร: <span id="permanent-coins" class="text-yellow-400">0</span></span>
+                <span class="text-xl font-bold text-white">เหรียญถาวร: <span id="permanent-coins" class="text-yellow-400">0</span></span>
+                <span id="sync-status" class="text-[10px] text-slate-500 font-bold italic">● Cloud Offline</span>
             </div>
-            <h2 class="text-lg mb-4 font-semibold border-b border-slate-700 pb-2 flex items-center">
-                <span class="mr-2">🛠️</span> Workshop (ถาวร)
+            <h2 class="text-lg mb-4 font-semibold border-b border-slate-700 pb-2 flex items-center justify-center text-white">
+                <span class="mr-2">🛠️</span> Workshop (อัปเกรดถาวร)
             </h2>
-            <div id="workshop-list" class="space-y-3 overflow-y-auto max-h-[40vh] pr-2 text-white"></div>
+            <div id="workshop-list" class="space-y-3 overflow-y-auto max-h-[35vh] pr-2 text-white"></div>
             <button onclick="startGame()" class="w-full mt-8 bg-blue-600 hover:bg-blue-500 font-bold py-4 rounded-2xl text-xl shadow-lg transition-all active:scale-95 border-b-4 border-blue-800">เข้าสู่สนามรบ</button>
         </div>
     </div>
 
+    <!-- Gameplay UI -->
     <div id="game-ui" class="hidden absolute inset-0 pointer-events-none p-4 flex flex-col justify-between">
         <div class="flex justify-between items-start">
             <div class="flex flex-col gap-2">
-                <div class="glass-panel p-2 px-4 rounded-2xl pointer-events-auto border-l-4 border-blue-500">
-                    <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Wave</p>
+                <div class="glass-panel p-2 px-4 rounded-2xl pointer-events-auto border-l-4 border-blue-500 shadow-lg">
+                    <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest text-white">Wave</p>
                     <p id="current-wave" class="text-2xl font-black text-white">1</p>
                 </div>
                 <div class="flex gap-1 pointer-events-auto flex-wrap max-w-[220px]">
@@ -51,95 +70,203 @@
                     <button onclick="togglePause()" id="pause-btn" class="bg-red-900/60 px-2 py-1 rounded text-[10px] font-bold text-white">⏸ PAUSE</button>
                 </div>
             </div>
+            
             <div class="flex flex-col gap-2 items-end">
                 <div class="glass-panel p-2 px-4 rounded-2xl pointer-events-auto min-w-[120px] border-r-4 border-cyan-400 text-right">
-                    <p class="text-[10px] text-cyan-400 font-bold uppercase text-white">CASH</p>
+                    <p class="text-[10px] text-cyan-400 font-bold uppercase tracking-widest text-white">CASH</p>
                     <p id="run-cash" class="text-xl font-bold text-white">$ 0</p>
                 </div>
-                <button onclick="toggleInventory()" class="glass-panel p-2 px-3 rounded-xl bg-slate-800/60 pointer-events-auto border border-white/10 hover:bg-slate-700 transition text-white">
-                    <span class="text-xs font-semibold text-white">📦 ดู Build</span>
-                </button>
+                <div class="flex gap-2 pointer-events-auto">
+                    <button onclick="toggleInventory()" class="glass-panel p-2 px-3 rounded-xl bg-slate-800/60 border border-white/10 hover:bg-slate-700 transition">
+                        <span class="text-xs font-semibold text-white">📦 ดู Build</span>
+                    </button>
+                    <button onclick="askAI()" class="glass-panel p-2 px-3 rounded-xl ai-pulse bg-purple-900/40 border border-purple-400/50 hover:bg-purple-800/60 transition">
+                        <span class="text-xs font-semibold text-white">✨ AI</span>
+                    </button>
+                </div>
             </div>
         </div>
 
         <div id="inventory-modal" class="hidden absolute top-32 right-4 w-64 glass-panel p-4 rounded-2xl border-r-4 border-blue-500 pointer-events-auto z-50 shadow-2xl text-white">
             <div class="flex justify-between items-center mb-3 text-white">
-                <span class="text-xs font-bold text-blue-400 uppercase tracking-widest text-white">Equipped Items</span>
+                <span class="text-xs font-bold text-blue-400 uppercase tracking-widest text-white text-left">Build ปัจจุบัน</span>
                 <button onclick="toggleInventory()" class="text-slate-500 text-white">✕</button>
             </div>
-            <div class="space-y-4 max-h-[50vh] overflow-y-auto">
-                <div><p class="text-[10px] font-bold text-slate-400 mb-2 uppercase text-white">Weapons (<span id="wpn-count">0</span>/6)</p><div id="wpn-list" class="space-y-1 text-white"></div></div>
-                <div><p class="text-[10px] font-bold text-slate-400 mb-2 uppercase text-white">Passives (<span id="pas-count">0</span>/6)</p><div id="pas-list" class="space-y-1 text-white"></div></div>
+            <div class="space-y-4 max-h-[50vh] overflow-y-auto text-left">
+                <div><p class="text-[10px] font-bold text-slate-400 mb-2 uppercase">Weapons (Slots: <span id="wpn-count" class="text-white">0</span>/6)</p><div id="wpn-list" class="space-y-1"></div></div>
+                <div><p class="text-[10px] font-bold text-slate-400 mb-2 uppercase">Passives (Slots: <span id="pas-count" class="text-white">0</span>/6)</p><div id="pas-list" class="space-y-1"></div></div>
             </div>
         </div>
 
-        <div id="game-msg" class="text-center text-4xl font-black text-white opacity-0 transition-all scale-150 pointer-events-none drop-shadow-lg">WAVE START!</div>
+        <div id="ai-bubble" class="hidden absolute top-32 left-1/2 -translate-x-1/2 w-[90%] max-w-md glass-panel p-4 rounded-2xl border-t-2 border-purple-500 pointer-events-auto z-50 shadow-2xl text-white">
+            <div class="flex justify-between items-center mb-1">
+                <span class="text-[10px] font-bold text-purple-400 uppercase tracking-tighter italic">AI Strategic Insight</span>
+                <button onclick="closeAI()" class="text-slate-500">✕</button>
+            </div>
+            <p id="ai-text" class="text-xs italic leading-relaxed text-slate-200">กำลังวิเคราะห์ข้อมูล...</p>
+        </div>
+
+        <div id="game-msg" class="text-center text-4xl font-black text-white opacity-0 transition-all scale-150 pointer-events-none drop-shadow-lg uppercase">WAVE START!</div>
 
         <div class="w-full pointer-events-auto">
             <div class="flex justify-between items-center mb-1">
-                <span class="text-[10px] font-bold text-blue-400 uppercase bg-slate-900/80 px-2 py-0.5 rounded-t-md border-t border-x border-white/10 italic text-white">Tactical Shop</span>
+                <span class="text-[10px] font-bold text-blue-400 uppercase bg-slate-900/80 px-2 py-0.5 rounded-t-md border-t border-x border-white/10 italic text-white font-semibold tracking-tighter">Tactical Shop (Slot 6/6)</span>
                 <button onclick="manualRefresh()" id="refresh-btn" class="bg-indigo-600 hover:bg-indigo-500 px-3 py-1 rounded-lg text-[10px] font-bold transition active:scale-90 text-white">รีเฟรช ($<span id="refresh-cost">10</span>)</button>
             </div>
             <div id="shop-container" class="glass-panel p-2 rounded-xl grid grid-cols-3 md:grid-cols-6 gap-2 border-t-2 border-blue-500/50 shadow-xl"></div>
         </div>
     </div>
 
+    <!-- Game Over -->
     <div id="game-over" class="hidden absolute inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 text-center text-white">
-        <div class="glass-panel p-8 rounded-3xl w-full max-w-sm border-t-4 border-red-500">
-            <h2 class="text-4xl font-black text-red-500 mb-4 italic text-white">GAME OVER</h2>
-            <p class="text-slate-300 mb-6 text-white">Wave: <span id="final-wave">1</span></p>
-            <div class="bg-slate-900/50 p-4 rounded-2xl mb-8">
-                <p class="text-slate-400 text-xs uppercase font-bold tracking-widest text-white">Coins Earned</p>
+        <div class="glass-panel p-8 rounded-3xl w-full max-w-sm border-t-4 border-red-500 shadow-2xl">
+            <h2 class="text-4xl font-black text-red-500 mb-4 italic uppercase">Game Over</h2>
+            <p class="text-slate-300 mb-6">คุณต้านทานได้ถึงเวฟที่: <span id="final-wave" class="text-white font-bold text-xl">1</span></p>
+            <div class="bg-slate-900/50 p-4 rounded-2xl mb-8 border border-white/5">
+                <p class="text-slate-400 text-[10px] uppercase font-bold tracking-widest text-white">Permanent Coins Earned</p>
                 <p id="earned-coins" class="text-3xl font-black text-yellow-400">+0</p>
             </div>
-            <button onclick="backToMenu()" class="w-full bg-white text-slate-950 font-black py-3 rounded-xl hover:bg-slate-200 transition-all active:scale-95">กลับเมนูหลัก</button>
+            <button onclick="backToMenu()" class="w-full bg-white text-slate-950 font-black py-3 rounded-xl hover:bg-slate-200 transition-all active:scale-95">กลับสู่เมนูหลัก</button>
         </div>
     </div>
 
     <canvas id="gameCanvas"></canvas>
 
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        let db, auth, userId, appId, firebaseReady = false;
+
+        const initFirebase = async () => {
+            try {
+                if (typeof __firebase_config !== 'undefined') {
+                    const config = JSON.parse(__firebase_config);
+                    const app = initializeApp(config);
+                    auth = getAuth(app);
+                    db = getFirestore(app);
+                    appId = typeof __app_id !== 'undefined' ? __app_id : 'itd-v2-final';
+                    firebaseReady = true;
+
+                    onAuthStateChanged(auth, async (user) => {
+                        if (user) {
+                            userId = user.uid;
+                            document.getElementById('user-id-display').innerText = `ID: ${userId}`;
+                            document.getElementById('sync-status').innerText = "● Cloud Synced";
+                            document.getElementById('sync-status').className = "text-[10px] text-green-500 font-bold italic";
+                            await loadCloudData();
+                        } else {
+                            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                                await signInWithCustomToken(auth, __initial_auth_token);
+                            } else {
+                                await signInAnonymously(auth);
+                            }
+                        }
+                    });
+                }
+            } catch (e) { document.getElementById('user-id-display').innerText = "Local Session"; }
+        };
+
+        window.saveCloud = async () => {
+            const data = { coins: window.gameStats.totalCoins, workshop: window.gameStats.workshop };
+            localStorage.setItem('itd_v2_coins_local', data.coins);
+            localStorage.setItem('itd_v2_workshop_local', JSON.stringify(data.workshop));
+            
+            if (firebaseReady && userId) {
+                try {
+                    const ref = doc(db, 'artifacts', appId, 'users', userId, 'data', 'main');
+                    await setDoc(ref, { ...data, updated: new Date().toISOString() });
+                } catch (e) { console.error("Cloud Error"); }
+            }
+        };
+
+        const loadCloudData = async () => {
+            try {
+                const ref = doc(db, 'artifacts', appId, 'users', userId, 'data', 'main');
+                const snap = await getDoc(ref);
+                if (snap.exists()) {
+                    const data = snap.data();
+                    window.gameStats.totalCoins = data.coins || 0;
+                    Object.assign(window.gameStats.workshop, data.workshop);
+                    window.updateWorkshopUI();
+                }
+            } catch (e) { console.error("Load Error"); }
+        };
+
+        initFirebase();
+    </script>
+
     <script>
+        // --- GAME LOGIC ---
+        window.gameStats = {
+            totalCoins: parseInt(localStorage.getItem('itd_v2_coins_local')) || 0,
+            workshop: JSON.parse(localStorage.getItem('itd_v2_workshop_local')) || {
+                damage: { name: "Base ATK", lvl: 1, cost: 10, inc: 3 },
+                health: { name: "Max HP", lvl: 1, cost: 10, inc: 50 },
+                cashBonus: { name: "Cash Bonus", lvl: 0, cost: 50, inc: 10 }
+            }
+        };
+
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        let isPlaying = false, isPaused = false, gameSpeed = 1, wave = 1, cash = 0, totalCoins = parseInt(localStorage.getItem('itd_coins')) || 0, runCoins = 0;
-        let lastTime = performance.now(), nextWaveTimer = 0, manualRefreshCount = 0, spawnCooldown = 0;
-        let enemies = [], projectiles = [], particles = [], lightningEffects = [], waveQueue = [], isWaveActive = false;
+        const apiKey = "";
 
-        const workshop = JSON.parse(localStorage.getItem('itd_workshop')) || {
-            damage: { name: "Base ATK", lvl: 1, cost: 10, inc: 2.5 },
-            health: { name: "Max HP", lvl: 1, cost: 10, inc: 40 },
-            cashBonus: { name: "Cash+", lvl: 0, cost: 50, inc: 10 }
-        };
+        let isPlaying = false, isPaused = false, gameSpeed = 1, wave = 1, cash = 0, runCoins = 0;
+        let lastTime = performance.now(), nextWaveTimer = 0, messageTimer = 0, manualRefreshCount = 0, spawnCooldown = 0;
+        let enemies = [], projectiles = [], particles = [], lightningEffects = [], waveQueue = [], isWaveActive = false;
 
         let tower = { x: 0, y: 0, size: 25, hp: 100, maxHp: 100, regen: 0, damage: 10, range: 240, atkSpeed: 1.0, atkTimer: 0, multishot: 1, shieldHp: 0, shieldMaxHp: 0, shieldAura: 0, weaponSlots: [], passiveSlots: [], levels: {}, critChance: 0, bounceChance: 0, cashMult: 1, coinMult: 1 };
 
         const weaponPool = [
-            { id: 'w_atk', name: 'Base ATK', icon: '⚔️', type: 'weapon', desc: 'ดาเมจพื้นฐาน +10', baseCost: 15 },
-            { id: 'w_ice', name: 'Frost Bolt', icon: '❄️', type: 'weapon', desc: 'แช่แข็งมอนสโลว์ 50%', baseCost: 150 },
-            { id: 'w_lgt', name: 'Lightning', icon: '⚡', type: 'weapon', desc: 'สายฟ้าชิ่งโดนรอบๆ', baseCost: 200 }
-        ];
-        const passivePool = [
-            { id: 'p_spd', name: 'ATK Speed', icon: '🏃', type: 'passive', desc: 'ยิงไวขึ้น 15%', baseCost: 20 },
-            { id: 'p_hp', name: 'Max HP', icon: '❤️', type: 'passive', desc: 'เลือดสูงสุด +75', baseCost: 20 }
+            { id: 'w_atk', name: 'Base ATK', icon: '⚔️', type: 'weapon', desc: 'เพิ่มดาเมจพื้นฐาน +10', baseCost: 15 },
+            { id: 'w_ice', name: 'Frost Bolt', icon: '❄️', type: 'weapon', desc: 'สโลว์มอนสเตอร์ 50%', baseCost: 150 },
+            { id: 'w_wind', name: 'Hurricane', icon: '🍃', type: 'weapon', desc: 'โอกาสผลักศัตรูกระเด็น', baseCost: 180 },
+            { id: 'w_earth', name: 'Earthquake', icon: '⛰️', type: 'weapon', desc: 'สตั้นมอน 1.2 วินาที', baseCost: 200 },
+            { id: 'w_water', name: 'Tidal Wave', icon: '💧', type: 'weapon', desc: 'ดาเมจกระจายแบบ Splash', baseCost: 160 },
+            { id: 'w_dark', name: 'Abyss', icon: '🔮', type: 'weapon', desc: 'ลดเลือดมอนแบบ DoT', baseCost: 250 },
+            { id: 'w_nature', name: 'Root Bind', icon: '🌿', type: 'weapon', desc: 'ตรึงมอนอยู่กับที่', baseCost: 220 },
+            { id: 'w_light', name: 'Chain Light', icon: '⚡', type: 'weapon', desc: 'สายฟ้าชิ่งรอบเป้าหมาย', baseCost: 300 },
+            { id: 'w_fire', name: 'Meteor', icon: '🔥', type: 'weapon', desc: 'ระเบิดดาเมจวงกว้าง', baseCost: 350 },
+            { id: 'w_laser', name: 'Plasma Ray', icon: '🔦', type: 'weapon', desc: 'ลำแสงแรงสูงเจาะมอนทีละตัว', baseCost: 400 }
         ];
 
-        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; tower.x = canvas.width/2; tower.y = canvas.height/2; }
+        const passivePool = [
+            { id: 'p_spd', name: 'ATK Speed', icon: '🏃', type: 'passive', desc: 'ยิงไวขึ้น +15%', baseCost: 20 },
+            { id: 'p_hp', name: 'Max HP', icon: '❤️', type: 'passive', desc: 'เลือดป้อม +75', baseCost: 20 },
+            { id: 'p_reg', name: 'HP Regen', icon: '🧪', type: 'passive', desc: 'ฟื้นเลือด +1.5/วิ', baseCost: 40 },
+            { id: 'p_crit', name: 'Crit Rate', icon: '💥', type: 'passive', desc: 'ดาเมจ x2.5 โอกาส +8%', baseCost: 100 },
+            { id: 'p_bou', name: 'Bounce', icon: '➰', type: 'passive', desc: 'กระสุนเด้งหามอนตัวอื่น', baseCost: 250 },
+            { id: 'p_shi', name: 'Energy Shield', icon: '🛡️', type: 'passive', desc: 'สร้างโล่ลดดาเมจและมีออร่า', baseCost: 300 },
+            { id: 'p_cash', name: 'Cash Bonus', icon: '💰', type: 'passive', desc: 'เงิน Cash ที่ได้รับ +20%', baseCost: 200 },
+            { id: 'p_coin', name: 'Coin Bonus', icon: '🪙', type: 'passive', desc: 'เหรียญถาวร +25%', baseCost: 300 },
+            { id: 'p_rng', name: 'ATK Range', icon: '🎯', type: 'passive', desc: 'ขยายระยะยิง +50', baseCost: 150 },
+            { id: 'p_mul', name: 'Multishot', icon: '🏹', type: 'passive', desc: 'ยิงกระสุนเพิ่ม +1 นัด', baseCost: 500 }
+        ];
+
+        let currentShop = [];
+
+        // --- HELPERS ---
+        function dist(x1, y1, x2, y2) { return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2); }
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; tower.x = canvas.width / 2; tower.y = canvas.height / 2; }
         window.addEventListener('resize', resize); resize();
 
-        function startGame() {
-            document.getElementById('main-menu').classList.add('hidden');
-            document.getElementById('game-ui').classList.remove('hidden');
-            wave = 1; cash = 150; runCoins = 0; enemies = []; projectiles = []; tower.levels = {}; tower.weaponSlots = []; tower.passiveSlots = [];
-            tower.damage = 10 + (workshop.damage.lvl-1)*workshop.damage.inc;
-            tower.maxHp = 100 + (workshop.health.lvl-1)*workshop.health.inc; tower.hp = tower.maxHp;
-            isPlaying = true; isPaused = false; generateShop(); updateUI(); requestAnimationFrame(gameLoop);
+        function createParticles(x, y, color, count) { 
+            for(let i=0; i<count; i++) {
+                particles.push({ 
+                    x, y, 
+                    vx: (Math.random()-0.5)*4, vy: (Math.random()-0.5)*4, 
+                    color, life: 0.5 + Math.random()*0.5 
+                }); 
+            } 
         }
 
+        // --- SHOP & UI ---
         function generateShop() {
             const all = [...weaponPool, ...passivePool];
             currentShop = all.sort(() => 0.5 - Math.random()).slice(0, 6).map(item => {
                 const lvl = tower.levels[item.id] || 0;
-                return { ...item, cost: Math.floor(item.baseCost * Math.pow(1.3, lvl)) };
+                return { ...item, cost: Math.floor(item.baseCost * Math.pow(1.35, lvl)) };
             });
             renderShop();
         }
@@ -147,74 +274,246 @@
         function renderShop() {
             const container = document.getElementById('shop-container'); container.innerHTML = '';
             currentShop.forEach((item, idx) => {
-                const lvl = tower.levels[item.id] || 0;
+                const isWpn = item.type === 'weapon', lvl = tower.levels[item.id] || 0;
+                const slots = isWpn ? tower.weaponSlots : tower.passiveSlots;
+                const full = slots.length >= 6 && !slots.includes(item.id);
                 const btn = document.createElement('button');
-                btn.className = "shop-btn glass-panel p-2 rounded-xl flex flex-col items-center pointer-events-auto text-white";
-                btn.disabled = cash < item.cost;
-                btn.onclick = () => {
-                    if(cash >= item.cost) {
-                        cash -= item.cost; tower.levels[item.id] = lvl + 1;
-                        if(item.id === 'w_atk') tower.damage += 10;
-                        if(item.id === 'p_hp') { tower.maxHp += 75; tower.hp += 75; }
-                        if(item.id === 'p_spd') tower.atkSpeed += 0.15;
-                        updateUI(); renderShop();
-                    }
-                };
-                btn.innerHTML = `<span class="text-xl">${item.icon}</span><span class="text-[10px] font-bold">${item.name}</span><span class="text-xs text-yellow-400">$${item.cost}</span><span class="text-[8px] text-blue-400">Lv.${lvl}</span>`;
+                btn.className = `shop-btn glass-panel p-1.5 rounded-lg flex flex-col items-center border ${isWpn ? 'border-blue-500/30' : 'border-green-500/30'} pointer-events-auto text-white shadow-sm`;
+                btn.disabled = cash < item.cost || full;
+                btn.onclick = () => buyItem(idx);
+                btn.innerHTML = `
+                    <div class="absolute top-0 right-0 bg-blue-600/60 text-[7px] px-1 rounded-bl-md font-bold">Lv.${lvl}</div>
+                    <span class="text-lg mb-0.5">${item.icon}</span>
+                    <span class="text-[9px] font-bold uppercase truncate w-full">${item.name}</span>
+                    <span class="text-xs text-yellow-400 font-bold">$${item.cost}</span>
+                    <div class="tooltip font-bold">
+                        <p class="text-blue-300 uppercase">${item.name}</p>
+                        <p class="text-[10px] font-normal mt-1 text-white">${item.desc}</p>
+                        ${full ? '<p class="text-red-400 font-bold">Slot เต็ม!</p>' : ''}
+                    </div>
+                `;
                 container.appendChild(btn);
             });
         }
 
+        function buyItem(idx) {
+            const item = currentShop[idx];
+            if(cash < item.cost) return;
+            const isWpn = item.type === 'weapon', slots = isWpn ? tower.weaponSlots : tower.passiveSlots;
+            if(!slots.includes(item.id)) { if(slots.length >= 6) return; slots.push(item.id); }
+            cash -= item.cost;
+            tower.levels[item.id] = (tower.levels[item.id] || 0) + 1;
+            
+            if(item.id === 'w_atk') tower.damage += 10;
+            if(item.id === 'p_spd') tower.atkSpeed += 0.15;
+            if(item.id === 'p_hp') { tower.maxHp += 75; tower.hp += 75; }
+            if(item.id === 'p_reg') tower.regen += 1.5;
+            if(item.id === 'p_crit') tower.critChance += 8;
+            if(item.id === 'p_bou') tower.bounceChance += 15;
+            if(item.id === 'p_mul') tower.multishot += 1;
+            if(item.id === 'p_rng') tower.range += 50;
+            if(item.id === 'p_shi') { tower.shieldMaxHp += 100; tower.shieldHp = tower.shieldMaxHp; tower.shieldAura += 8; }
+            if(item.id === 'p_cash') tower.cashMult += 0.2;
+            if(item.id === 'p_coin') tower.coinMult += 0.25;
+            currentShop.splice(idx, 1); if(currentShop.length === 0) generateShop();
+            renderShop(); updateUI();
+        }
+
+        function manualRefresh() {
+            let cost = 10 + manualRefreshCount * 5;
+            if(cash >= cost) { cash -= cost; manualRefreshCount++; generateShop(); updateUI(); }
+        }
+
         function updateUI() {
             document.getElementById('current-wave').innerText = wave;
-            document.getElementById('run-cash').innerText = "$ " + Math.floor(cash);
-            document.getElementById('permanent-coins').innerText = totalCoins;
-        }
-
-        function spawnEnemy() {
-            const ang = Math.random()*Math.PI*2, d = Math.max(canvas.width, canvas.height)*0.6;
-            enemies.push({ x: tower.x+Math.cos(ang)*d, y: tower.y+Math.sin(ang)*d, hp: 10*wave, maxHp: 10*wave, spd: 50+wave, sz: 10, c: '#f87171' });
-        }
-
-        function gameLoop(time) {
-            if(!isPlaying || isPaused) return;
-            const dt = (time - lastTime) / 1000 * gameSpeed; lastTime = time;
-            ctx.fillStyle = '#020617'; ctx.fillRect(0,0,canvas.width,canvas.height);
-
-            // Spawning
-            spawnCooldown -= dt; if(spawnCooldown <= 0) { spawnEnemy(); spawnCooldown = 1.5; }
-
-            // Enemies
-            enemies.forEach((e, i) => {
-                const ang = Math.atan2(tower.y-e.y, tower.x-e.x);
-                e.x += Math.cos(ang)*e.spd*dt; e.y += Math.sin(ang)*e.spd*dt;
-                ctx.fillStyle = e.c; ctx.beginPath(); ctx.arc(e.x, e.y, e.sz, 0, Math.PI*2); ctx.fill();
-                if(Math.sqrt((tower.x-e.x)**2 + (tower.y-e.y)**2) < 30) { tower.hp -= 10; enemies.splice(i, 1); if(tower.hp <= 0) endGame(); }
-            });
-
-            // Tower
-            ctx.fillStyle = '#3b82f6'; ctx.fillRect(tower.x-15, tower.y-15, 30, 30);
-            ctx.fillStyle = '#10b981'; ctx.fillRect(tower.x-45, tower.y+25, 90*(tower.hp/tower.maxHp), 8);
+            document.getElementById('run-cash').innerText = "$ " + Math.floor(cash).toLocaleString();
+            document.getElementById('permanent-coins').innerText = window.gameStats.totalCoins;
+            document.getElementById('refresh-cost').innerText = 10 + manualRefreshCount*5;
             
-            updateUI(); requestAnimationFrame(gameLoop);
+            const shopBtns = document.querySelectorAll('.shop-btn');
+            currentShop.forEach((item, i) => {
+                if(shopBtns[i]) {
+                    const isWpn = item.type === 'weapon', slots = isWpn ? tower.weaponSlots : tower.passiveSlots;
+                    const full = slots.length >= 6 && !slots.includes(item.id);
+                    shopBtns[i].disabled = cash < item.cost || full;
+                }
+            });
         }
 
         function updateWorkshopUI() {
             const list = document.getElementById('workshop-list'); list.innerHTML = '';
-            document.getElementById('permanent-coins').innerText = totalCoins;
-            Object.keys(workshop).forEach(k => {
-                const i = workshop[k];
-                list.innerHTML += `<div class="flex justify-between items-center bg-slate-800/40 p-2 rounded-xl border border-white/5 text-white">
-                <div><p class="text-xs font-bold text-white">${i.name}</p><p class="text-[10px] text-slate-400">Lv: ${i.lvl}</p></div>
-                <button onclick="buyWorkshop('${k}')" ${totalCoins<i.cost?'disabled':''} class="bg-yellow-600 px-3 py-1 rounded text-white text-[10px]">Buy (${i.cost})</button></div>`;
+            document.getElementById('permanent-coins').innerText = window.gameStats.totalCoins;
+            Object.keys(window.gameStats.workshop).forEach(k => {
+                const i = window.gameStats.workshop[k];
+                const d = document.createElement('div');
+                d.className = 'flex justify-between items-center bg-slate-800/40 p-2.5 rounded-xl border border-white/5 text-left';
+                d.innerHTML = `<div><p class="text-xs font-bold text-white">${i.name}</p><p class="text-[10px] text-slate-400 italic">Lv: ${i.lvl}</p></div>
+                <button onclick="upgradeWorkshop('${k}')" ${window.gameStats.totalCoins<i.cost?'disabled':''} class="bg-yellow-600 hover:bg-yellow-500 px-3 py-1.5 rounded text-white text-[10px] font-bold">Buy (${i.cost})</button>`;
+                list.appendChild(d);
             });
         }
-        function buyWorkshop(k) { if(totalCoins >= workshop[k].cost) { totalCoins -= workshop[k].cost; workshop[k].lvl++; workshop[k].cost = Math.floor(workshop[k].cost*1.5); localStorage.setItem('itd_coins', totalCoins); localStorage.setItem('itd_workshop', JSON.stringify(workshop)); updateWorkshopUI(); } }
+
+        function upgradeWorkshop(k) {
+            const i = window.gameStats.workshop[k];
+            if(window.gameStats.totalCoins >= i.cost) {
+                window.gameStats.totalCoins -= i.cost; i.lvl++; i.cost = Math.floor(i.cost*1.6);
+                updateWorkshopUI(); window.saveCloud();
+            }
+        }
+
+        // --- CORE LOGIC ---
+        function startGame() {
+            document.getElementById('main-menu').classList.add('hidden');
+            document.getElementById('game-ui').classList.remove('hidden');
+            document.getElementById('game-over').classList.add('hidden');
+            wave = 1; cash = 150; runCoins = 0; manualRefreshCount = 0; enemies = []; projectiles = []; particles = []; waveQueue = [];
+            tower.levels = {}; tower.weaponSlots = []; tower.passiveSlots = [];
+            tower.damage = 10 + (window.gameStats.workshop.damage.lvl - 1) * 3;
+            tower.maxHp = 100 + (window.gameStats.workshop.health.lvl - 1) * 50;
+            tower.hp = tower.maxHp; tower.atkSpeed = 1.0; tower.regen = 0; tower.range = 240; tower.multishot = 1;
+            tower.critChance = 0; tower.bounceChance = 0; tower.shieldHp = 0; tower.shieldMaxHp = 0; tower.shieldAura = 0;
+            tower.cashMult = 1; tower.coinMult = 1;
+            isPlaying = true; isPaused = false; generateShop(); updateUI(); requestAnimationFrame(gameLoop);
+        }
+
+        function endGame() { 
+            isPlaying = false; 
+            const earned = Math.floor(runCoins * tower.coinMult); 
+            window.gameStats.totalCoins += earned;
+            document.getElementById('final-wave').innerText = wave; 
+            document.getElementById('earned-coins').innerText = `+${earned}`;
+            document.getElementById('game-ui').classList.add('hidden'); 
+            document.getElementById('game-over').classList.remove('hidden');
+            window.saveCloud();
+        }
+
         function backToMenu() { document.getElementById('game-over').classList.add('hidden'); document.getElementById('main-menu').classList.remove('hidden'); isPlaying = false; updateWorkshopUI(); }
-        function endGame() { isPlaying = false; totalCoins += wave*5; localStorage.setItem('itd_coins', totalCoins); document.getElementById('final-wave').innerText = wave; document.getElementById('earned-coins').innerText = `+${wave*5}`; document.getElementById('game-ui').classList.add('hidden'); document.getElementById('game-over').classList.remove('hidden'); }
-        function togglePause() { isPaused = !isPaused; document.getElementById('pause-btn').innerText = isPaused ? '▶ RESUME' : '⏸ PAUSE'; }
         function setSpeed(s) { gameSpeed = s; document.querySelectorAll('[id^="spd-"]').forEach(b => b.classList.remove('speed-btn-active')); document.getElementById('spd-'+s).classList.add('speed-btn-active'); }
-        function toggleInventory() { document.getElementById('inventory-modal').classList.toggle('hidden'); }
+        function togglePause() { isPaused = !isPaused; document.getElementById('pause-btn').innerText = isPaused ? '▶ RESUME' : '⏸ PAUSE'; }
+        function toggleInventory() { document.getElementById('inventory-modal').classList.toggle('hidden'); if(!document.getElementById('inventory-modal').classList.contains('hidden')) updateInventoryUI(); }
+        function askAI() { document.getElementById('ai-bubble').classList.remove('hidden'); document.getElementById('ai-text').innerText = "คำแนะนำจาก AI: เน้นอัปเกรด Base ATK และ ATK Speed ในช่วงแรกเพื่อให้ผ่านเวฟฝูงมอนสเตอร์เวฟที่ 4 ได้ง่ายขึ้นครับ!"; }
+        function closeAI() { document.getElementById('ai-bubble').classList.add('hidden'); }
+
+        // --- COMBAT ---
+        function prepareWave(w) {
+            waveQueue = []; const isBoss = w % 10 === 0;
+            if(isBoss) { waveQueue.push({ type: 'boss', mult: 1 + w*0.15, interval: 1 }); }
+            else {
+                const pts = 15 + w*8; let cur = 0; const swarm = w%4===0, armored = w%5===0;
+                while(cur < pts) {
+                    const r = Math.random();
+                    if(r < 0.4) { waveQueue.push({ type: 'normal', mult: 1+w*0.1, interval: 0.25 }); cur++; }
+                    else if(swarm && r < 0.7) { for(let i=0; i<10; i++) waveQueue.push({ type: 'swarm', mult: 1+w*0.06, interval: 0.08 }); cur += 2; }
+                    else if(armored && r < 0.9) { waveQueue.push({ type: 'armored', mult: 1+w*0.12, interval: 0.6 }); cur += 3; }
+                    else { waveQueue.push({ type: 'normal', mult: 1+w*0.1, interval: 0.3 }); cur++; }
+                }
+            }
+        }
+
+        function spawnEnemy(t, m) {
+            const ang = Math.random()*Math.PI*2, d = Math.max(canvas.width, canvas.height)*0.6;
+            let balance = wave < 5 ? 0.65 : 1.0;
+            let e = { x: tower.x+Math.cos(ang)*d, y: tower.y+Math.sin(ang)*d, type: t, slow: 0, stun: 0 };
+            if(t==='normal'){ e.hp=12*m*balance; e.spd=50+wave; e.dmg=4+wave*0.2; e.sz=10; e.c='#f87171'; e.cr=4; }
+            if(t==='swarm'){ e.hp=5*m*balance; e.spd=120+wave; e.dmg=2+wave*0.1; e.sz=6; e.c='#fb923c'; e.cr=1; }
+            if(t==='armored'){ e.hp=45*m; e.spd=45; e.dmg=8+wave*0.3; e.sz=13; e.c='#475569'; e.cr=8; }
+            if(t==='boss'){ e.hp=450*m; e.spd=30; e.dmg=45+wave*2; e.sz=40; e.c='#7e22ce'; e.cr=200; e.cor=40; }
+            e.maxHp = e.hp; enemies.push(e);
+        }
+
+        function fireAt(tar) {
+            const isCrit = Math.random() < tower.critChance/100;
+            const wps = tower.weaponSlots.filter(id => id !== 'w_atk');
+            const el = wps.length > 0 ? wps[Math.floor(Math.random()*wps.length)] : null;
+            const colors = { w_ice: '#06b6d4', w_wind: '#4ade80', w_earth: '#a16207', w_water: '#3b82f6', w_dark: '#a855f7', w_nature: '#84cc16', w_light: '#eab308', w_fire: '#f97316', w_laser: '#ef4444' };
+            projectiles.push({ x: tower.x, y: tower.y, ang: Math.atan2(tar.y-tower.y, tar.x-tower.x), spd: el === 'w_laser' ? 1200 : 550, dmg: tower.damage*(isCrit?2.5:1), isCrit, el, c: el?colors[el]:'#60a5fa', bou: false });
+        }
+
+        function triggerLightning(s, j) {
+            let cur = s; let hit = new Set([s]);
+            for(let i=0; i<j; i++) {
+                const nxt = enemies.find(e => !hit.has(e) && dist(cur.x, cur.y, e.x, e.y) < 140);
+                if(!nxt) break;
+                lightningEffects.push({ x1: cur.x, y1: cur.y, x2: nxt.x, y2: nxt.y, l: 1.0 });
+                nxt.hp -= tower.damage*0.6; hit.add(nxt); cur = nxt;
+            }
+        }
+
+        function update(dt) {
+            if(!isPlaying || isPaused) return;
+            const adt = Math.min(dt, 0.1) * gameSpeed;
+            if(tower.hp < tower.maxHp) tower.hp = Math.min(tower.maxHp, tower.hp + tower.regen*adt);
+            if(tower.shieldHp < tower.shieldMaxHp) tower.shieldHp = Math.min(tower.shieldMaxHp, tower.shieldHp + 3*adt);
+            if(tower.shieldHp > 0) enemies.forEach(e => { if(dist(tower.x, tower.y, e.x, e.y) < 85) e.hp -= (tower.shieldAura + tower.damage*0.1)*adt; });
+
+            if(!isWaveActive && enemies.length === 0 && nextWaveTimer <= 0) { nextWaveTimer = 2.0; messageTimer = 1.5; document.getElementById('game-msg').innerText = wave % 10 === 0 ? "BOSS WAVE" : `WAVE ${wave}`; document.getElementById('game-msg').style.opacity = 1; }
+            if(nextWaveTimer > 0) { nextWaveTimer -= adt; if(nextWaveTimer <= 0) { prepareWave(wave); isWaveActive = true; document.getElementById('game-msg').style.opacity = 0; } }
+            if(isWaveActive) {
+                spawnCooldown -= adt; if(spawnCooldown <= 0 && waveQueue.length > 0) { const n = waveQueue.shift(); spawnEnemy(n.type, n.mult); spawnCooldown = n.interval; }
+                if(waveQueue.length === 0 && enemies.length === 0) { isWaveActive = false; cash += (30 + window.gameStats.workshop.cashBonus.lvl*12)*tower.cashMult; wave++; generateShop(); manualRefreshCount = 0; }
+            }
+
+            tower.atkTimer += adt;
+            if(tower.atkTimer >= 1/tower.atkSpeed) {
+                const tar = enemies.filter(e => dist(tower.x, tower.y, e.x, e.y) <= tower.range).sort((a,b) => dist(tower.x, tower.y, a.x, a.y) - dist(tower.x, tower.y, b.x, b.y));
+                if(tar.length > 0) { for(let i=0; i<Math.min(tower.multishot, tar.length); i++) fireAt(tar[i]); tower.atkTimer = 0; }
+            }
+
+            projectiles.forEach((p, i) => {
+                p.x += Math.cos(p.ang)*p.spd*adt; p.y += Math.sin(p.ang)*p.spd*adt;
+                enemies.forEach(e => {
+                    if(dist(p.x, p.y, e.x, e.y) < e.sz+6) {
+                        e.hp -= p.dmg; p.del = true; createParticles(p.x, p.y, p.c, 3);
+                        if(p.el === 'w_ice') e.slow = 2.5;
+                        if(p.el === 'w_earth' && Math.random() < 0.25) e.stun = 1.2;
+                        if(p.el === 'w_light') triggerLightning(e, 3);
+                        if(tower.bounceChance > 0 && Math.random() < tower.bounceChance/100 && !p.bou) {
+                            const nxt = enemies.find(en => en !== e && dist(e.x, e.y, en.x, en.y) < 160);
+                            if(nxt) { p.del = false; p.bou = true; p.ang = Math.atan2(nxt.y-p.y, nxt.x-p.x); }
+                        }
+                    }
+                });
+                if(dist(tower.x, tower.y, p.x, p.y) > tower.range+60 || p.del) projectiles.splice(i, 1);
+            });
+
+            enemies.forEach((e, i) => {
+                let curS = e.spd; if(e.slow > 0) { e.slow -= adt; curS *= 0.5; } if(e.stun > 0) { e.stun -= adt; curS = 0; }
+                const ang = Math.atan2(tower.y-e.y, tower.x-e.x); e.x += Math.cos(ang)*curS*adt; e.y += Math.sin(ang)*curS*adt;
+                if(dist(e.x, e.y, tower.x, tower.y) < tower.size+6) {
+                    let d = e.dmg; if(tower.shieldHp > 0) { const a = Math.min(tower.shieldHp, d); tower.shieldHp -= a; d -= a; }
+                    tower.hp -= d; if(tower.hp <= 0) endGame(); enemies.splice(i, 1);
+                }
+                if(e.hp <= 0) { cash += e.cr*tower.cashMult; runCoins += e.cor || 1; enemies.splice(i, 1); }
+            });
+
+            for(let i=lightningEffects.length-1; i>=0; i--) { lightningEffects[i].l -= adt; if(lightningEffects[i].l <= 0) lightningEffects.splice(i, 1); }
+            particles.forEach((p, i) => { p.x += p.vx*adt*60; p.y += p.vy*adt*60; p.life -= adt; if(p.life <= 0) particles.splice(i, 1); });
+            updateUI();
+        }
+
+        function draw() {
+            ctx.fillStyle = '#020617'; ctx.fillRect(0,0,canvas.width,canvas.height);
+            ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 1;
+            for(let x=0;x<canvas.width;x+=80){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,canvas.height);ctx.stroke();}
+            for(let y=0;y<canvas.height;y+=80){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(canvas.width,y);ctx.stroke();}
+
+            if(tower.shieldHp > 0) { ctx.beginPath(); ctx.arc(tower.x, tower.y, 48, 0, Math.PI*2); ctx.strokeStyle = `rgba(59, 130, 246, 0.4)`; ctx.lineWidth = 4; ctx.stroke(); }
+            enemies.forEach(e => {
+                ctx.fillStyle = e.c; ctx.beginPath(); ctx.arc(e.x, e.y, e.sz, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = '#450a0a'; ctx.fillRect(e.x-e.sz, e.y-e.sz-6, e.sz*2, 3);
+                ctx.fillStyle = '#ef4444'; ctx.fillRect(e.x-e.sz, e.y-e.sz-6, (e.sz*2)*(e.hp/e.maxHp), 3);
+            });
+            projectiles.forEach(p => { ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(p.x, p.y, p.isCrit ? 6 : 4, 0, Math.PI*2); ctx.fill(); });
+            lightningEffects.forEach(le => { ctx.strokeStyle = `rgba(234, 179, 8, ${le.l})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(le.x1, le.y1); ctx.lineTo((le.x1+le.x2)/2 + (Math.random()-0.5)*35, (le.y1+le.y2)/2 + (Math.random()-0.5)*35); ctx.lineTo(le.x2, le.y2); ctx.stroke(); });
+            particles.forEach(p => { ctx.globalAlpha = p.life; ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, 2, 2); }); ctx.globalAlpha = 1;
+
+            ctx.fillStyle = '#3b82f6'; ctx.beginPath(); ctx.roundRect(tower.x-12.5, tower.y-12.5, 25, 25, 6); ctx.fill();
+            const hpW = 90; ctx.fillStyle = '#1e293b'; ctx.fillRect(tower.x-hpW/2, tower.y+25, hpW, 8);
+            ctx.fillStyle = '#10b981'; ctx.fillRect(tower.x-hpW/2, tower.y+25, hpW*(tower.hp/tower.maxHp), 8);
+        }
+
+        function gameLoop(time) { if(isPlaying) { update((time - lastTime)/1000); draw(); lastTime = time; requestAnimationFrame(gameLoop); } }
+
         updateWorkshopUI();
     </script>
 </body>
